@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSM & WAP Push Professional Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darker: '#090d16',
+                        panel: '#111827',
+                        bordercolor: '#1f293d',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .glow-effect { box-shadow: 0 0 20px rgba(6, 182, 212, 0.15); }
+    </style>
+</head>
+<body class="bg-darker text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-white">
+
+    <!-- Top Navigation Bar / Status Header -->
+    <header class="border-b border-bordercolor bg-panel/80 backdrop-blur sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 rounded-full bg-cyan-500 animate-pulse" id="modemStatusLight"></div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide text-cyan-400 flex items-center gap-2">
+                        <span>⚡</span> GSM & WAP PDU Laboratory
+                    </h1>
+                    <p class="text-xs text-slate-400">Advanced Hardware Interface & Fuzzing Utility</p>
+                </div>
+            </div>
+
+            <!-- Serial Port Controller Block -->
+            <div class="flex items-center space-x-3 bg-darker/60 border border-bordercolor px-4 py-2 rounded-lg">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Port:</span>
+                <select id="comPort" class="bg-transparent text-sm font-mono text-cyan-300 focus:outline-none cursor-pointer">
+                    {% for port in ports %}
+                    <option value="{{ port }}" class="bg-panel text-slate-100">{{ port }}</option>
+                    {% endfor %}
+                </select>
+                <button onclick="refreshPorts()" class="text-slate-400 hover:text-cyan-400 transition" title="Refresh Ports">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+                <div class="h-4 w-[1px] bg-bordercolor mx-1"></div>
+                <button onclick="testConnection()" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs px-3 py-1.5 rounded transition font-medium">Test Connection</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left Column: Controls & Generators (Spans 2 Columns) -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Mode Selector Switcher Tabs -->
+            <div class="flex bg-panel border border-bordercolor rounded-xl p-1.5">
+                <button onclick="switchTab('sms')" id="tabSmsBtn" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition bg-cyan-600 text-white shadow">
+                    📱 SMS Fuzzer / Encoder
+                </button>
+                <button onclick="switchTab('wap')" id="tabWapBtn" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition text-slate-400 hover:text-slate-200">
+                    🌐 WAP Push Generator
+                </button>
+            </div>
+
+            <!-- SMS Fuzzer Panel -->
+            <div id="smsPanel" class="bg-panel border border-bordercolor rounded-2xl p-6 glow-effect space-y-5">
+                <div class="flex justify-between items-center border-b border-bordercolor pb-3">
+                    <h2 class="text-base font-bold text-slate-200 flex items-center gap-2"><span>✉️</span> Standard, Flash & Silent SMS</h2>
+                    <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded">PDU Mode Active</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">SMS Payload Type</label>
+                        <select id="smsType" class="w-full bg-darker border border-bordercolor rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none transition">
+                            <option value="NORMAL">NORMAL (0x08)</option>
+                            <option value="FLASH">FLASH (0x18)</option>
+                            <option value="SILENT">SILENT (0xC0)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Target Phone Number</label>
+                        <input type="text" id="smsTarget" value="6282179003599" class="w-full bg-darker border border-bordercolor rounded-xl px-3.5 py-2.5 text-sm font-mono text-cyan-300 focus:border-cyan-500 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Message Content / Payload</label>
+                    <textarea id="smsMsg" rows="3" class="w-full bg-darker border border-bordercolor rounded-xl p-3.5 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none transition">Hello World</textarea>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                        <input type="checkbox" id="delReport" checked class="w-4 h-4 rounded bg-darker border-bordercolor text-cyan-500 focus:ring-0 cursor-pointer">
+                        <span class="text-sm text-slate-300">Request Delivery Report (Status Report)</span>
+                    </label>
+                    <button onclick="sendSms()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition shadow-lg shadow-cyan-600/20 flex items-center gap-2">
+                        <span>Transmit SMS</span> 🚀
+                    </button>
+                </div>
+            </div>
+
+            <!-- WAP Push Panel (Hidden by Default) -->
+            <div id="wapPanel" class="bg-panel border border-bordercolor rounded-2xl p-6 glow-effect space-y-5 hidden">
+                <div class="flex justify-between items-center border-b border-bordercolor pb-3">
+                    <h2 class="text-base font-bold text-slate-200 flex items-center gap-2"><span>🛰️</span> WAP Push Binary PDU Builder</h2>
+                    <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded">Binary SMS</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Start Timestamp</label>
+                        <input type="text" id="wapStart" value="20261123203000" class="w-full bg-darker border border-bordercolor rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-200 focus:border-cyan-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">End Timestamp</label>
+                        <input type="text" id="wapEnd" value="20261223203000" class="w-full bg-darker border border-bordercolor rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-200 focus:border-cyan-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Header URL Destination</label>
+                        <input type="text" id="wapHeader" value="www.headerhere.com" class="w-full bg-darker border border-bordercolor rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-200 focus:border-cyan-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Target Number</label>
+                        <input type="text" id="wapTarget" value="6282179003599" class="w-full bg-darker border border-bordercolor rounded-xl px-3.5 py-2.5 text-sm font-mono text-cyan-300 focus:border-cyan-500 focus:outline-none transition">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">WAP Subtype</label>
+                        <select id="wapType" class="w-full bg-darker border border-bordercolor rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-200 focus:border-cyan-500 focus:outline-none transition">
+                            <option value="01">01 - Control/Action</option><option value="02">02</option><option value="03">03</option><option value="04">04</option>
+                            <option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option>
+                            <option value="09">09</option><option value="0A">0A</option><option value="0B" selected>0B - Default Push SI</option><option value="0C">0C</option>
+                            <option value="0D">0D</option><option value="0E">0E</option><option value="0F">0F</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Push Text Message / Notification Title</label>
+                    <textarea id="wapMsg" rows="2" class="w-full bg-darker border border-bordercolor rounded-xl p-3.5 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none transition">Hello World</textarea>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                        <input type="checkbox" id="wapDelReport" class="w-4 h-4 rounded bg-darker border-bordercolor text-cyan-500 focus:ring-0 cursor-pointer">
+                        <span class="text-sm text-slate-300">Request Delivery Report (TP-UDHI 0x61)</span>
+                    </label>
+                    <button onclick="sendWap()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition shadow-lg shadow-cyan-600/20 flex items-center gap-2">
+                        <span>Transmit WAP Push</span> 🛰️
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Real-time Terminal / Debug Console -->
+        <div class="bg-panel border border-bordercolor rounded-2xl p-5 flex flex-col h-[520px] lg:h-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-bordercolor mb-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> AT Terminal Monitor
+                </span>
+                <button onclick="clearConsole()" class="text-xs text-slate-400 hover:text-slate-200 bg-darker border border-bordercolor px-2.5 py-1 rounded transition">Clear Log</button>
+            </div>
+
+            <div class="flex-1 bg-darker border border-bordercolor rounded-xl p-3.5 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-inner" id="debugOutput">
+[System initialized successfully]
+Waiting for modem commands...
+            </div>
+
+            <div class="mt-3 flex gap-2">
+                <input type="text" id="customAtInput" placeholder="Ketik AT Command manual..." class="flex-1 bg-darker border border-bordercolor rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:border-cyan-500 focus:outline-none" onkeypress="handleCustomAtKey(event)">
+                <button onclick="sendCustomAt()" class="bg-slate-800 hover:bg-slate-700 border border-bordercolor text-xs px-4 py-2 rounded-xl text-slate-200 font-medium transition">Kirim</button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const smsMsgEl = document.getElementById('smsMsg');
+        const smsCounterEl = document.createElement('div');
+        smsCounterEl.className = 'text-xs text-slate-400 mt-1 flex justify-between';
+        smsCounterEl.innerHTML = '<span>Encoding: UCS-2 (16-bit)</span><span id="smsCharCount">0 / 70 chars</span>';
+        smsMsgEl.parentNode.appendChild(smsCounterEl);
+
+        function updateCharCount() {
+            const len = smsMsgEl.value.length;
+            const counter = document.getElementById('smsCharCount');
+            counter.textContent = `${len} / 70 chars`;
+            counter.className = len > 70 ? 'text-amber-400 font-semibold' : 'text-slate-400';
+        }
+        smsMsgEl.addEventListener('input', updateCharCount);
+        updateCharCount();
+
+        function setModemStatus(state) {
+            const light = document.getElementById('modemStatusLight');
+            light.classList.remove('bg-cyan-500', 'bg-emerald-500', 'bg-rose-500');
+            if (state === 'ok') light.classList.add('bg-emerald-500');
+            else if (state === 'error') light.classList.add('bg-rose-500');
+            else light.classList.add('bg-cyan-500');
+        }
+
+        function switchTab(tab) {
+            const smsPanel = document.getElementById('smsPanel');
+            const wapPanel = document.getElementById('wapPanel');
+            const tabSmsBtn = document.getElementById('tabSmsBtn');
+            const tabWapBtn = document.getElementById('tabWapBtn');
+            const isSms = tab === 'sms';
+
+            smsPanel.classList.toggle('hidden', !isSms);
+            wapPanel.classList.toggle('hidden', isSms);
+
+            tabSmsBtn.className = isSms
+                ? "flex-1 py-2.5 rounded-lg text-sm font-semibold transition bg-cyan-600 text-white shadow"
+                : "flex-1 py-2.5 rounded-lg text-sm font-semibold transition text-slate-400 hover:text-slate-200";
+            tabWapBtn.className = !isSms
+                ? "flex-1 py-2.5 rounded-lg text-sm font-semibold transition bg-cyan-600 text-white shadow"
+                : "flex-1 py-2.5 rounded-lg text-sm font-semibold transition text-slate-400 hover:text-slate-200";
+        }
+
+        function logOutput(text, isError = false) {
+            const box = document.getElementById('debugOutput');
+            const now = new Date();
+            const timestamp = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+            const prefix = isError ? `[${timestamp}] [ERROR] ` : `[${timestamp}] `;
+            box.textContent += `\n${prefix}${text}`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('debugOutput').textContent = "[Terminal cleared]";
+        }
+
+        async function postJson(url, payload = {}) {
+            let res;
+            try {
+                res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (networkErr) {
+                throw new Error(`Fetch gagal ke ${url} (origin: ${window.location.origin}) -> ${networkErr.message}`);
+            }
+
+            const rawText = await res.text();
+            let data;
+            try {
+                data = JSON.parse(rawText);
+            } catch (_) {
+                throw new Error(`HTTP ${res.status} (Non-JSON): ${rawText.slice(0, 200)}`);
+            }
+
+            if (!res.ok || data.status === 'error') {
+                const err = new Error(data.response || `HTTP ${res.status}`);
+                err.data = data;
+                throw err;
+            }
+            return data;
+        }
+
+        async function refreshPorts() {
+            try {
+                const res = await fetch('/api/refresh-ports');
+                const data = await res.json();
+                const select = document.getElementById('comPort');
+                select.innerHTML = '';
+                (data.ports || []).forEach(port => {
+                    const opt = document.createElement('option');
+                    opt.value = port;
+                    opt.textContent = port;
+                    opt.className = "bg-panel text-slate-100";
+                    select.appendChild(opt);
+                });
+                logOutput(`Serial ports list refreshed: ${(data.ports || []).join(', ') || 'none'}`);
+            } catch (err) {
+                setModemStatus('error');
+                logOutput("Failed to refresh ports: " + err.message, true);
+            }
+        }
+
+        async function testConnection() {
+            const port = document.getElementById('comPort').value;
+            logOutput(`Testing connection on ${port} (AT)...`);
+            try {
+                const data = await postJson('/api/send-command', { port, command: 'AT' });
+                const reply = (data.response || '').trim();
+                setModemStatus(reply.includes('OK') ? 'ok' : 'idle');
+                logOutput(`Response from ${port}:\n${reply || '(empty)'}`);
+            } catch (err) {
+                setModemStatus('error');
+                logOutput("Connection error: " + err.message, true);
+            }
+        }
+
+        async function sendCustomAt() {
+            const input = document.getElementById('customAtInput');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+            const port = document.getElementById('comPort').value;
+
+            logOutput(`> ${cmd}`);
+            input.value = '';
+
+            try {
+                const data = await postJson('/api/send-command', { port, command: cmd });
+                logOutput((data.response || '').trim() || '(empty)');
+            } catch (err) {
+                setModemStatus('error');
+                logOutput("Command error: " + err.message, true);
+            }
+        }
+
+        function handleCustomAtKey(e) {
+            if (e.key === 'Enter') sendCustomAt();
+        }
+
+        async function sendSms() {
+            const port = document.getElementById('comPort').value;
+            const target = document.getElementById('smsTarget').value.trim();
+            const msg = smsMsgEl.value;
+            const sms_type = document.getElementById('smsType').value;
+            const del_report = document.getElementById('delReport').checked;
+
+            if (!/^\d{6,15}$/.test(target)) {
+                logOutput("Target phone number harus berupa 6-15 digit angka.", true);
+                return;
+            }
+
+            logOutput(`Preparing SMS (${sms_type}) to ${target} via ${port}...`);
+            try {
+                const data = await postJson('/api/send-sms', { port, target, msg, sms_type, del_report });
+                if (data.pdu) {
+                    logOutput(`Generated PDU (len=${data.pdu_len ?? '-'}, dcs=${data.dcs ?? '-'}):\n${data.pdu}`);
+                }
+                if (Array.isArray(data.trace) && data.trace.length > 0) {
+                    logOutput(`Serial Trace:\n- ${data.trace.join('\n- ')}`);
+                }
+                logOutput(`Modem Response:\n${(data.response || '').trim()}`);
+                setModemStatus('ok');
+            } catch (err) {
+                setModemStatus('error');
+                if (err.data?.pdu) logOutput(`Generated PDU:\n${err.data.pdu}`);
+                if (Array.isArray(err.data?.trace)) logOutput(`Serial Trace:\n- ${err.data.trace.join('\n- ')}`);
+                logOutput("SMS transmission failed: " + err.message, true);
+            }
+        }
+
+        async function sendWap() {
+            const port = document.getElementById('comPort').value;
+            const start_date = document.getElementById('wapStart').value.trim();
+            const end_date = document.getElementById('wapEnd').value.trim();
+            const header = document.getElementById('wapHeader').value.trim();
+            const target = document.getElementById('wapTarget').value.trim();
+            const msg = document.getElementById('wapMsg').value;
+            const wap_type = document.getElementById('wapType').value;
+            const del_report = document.getElementById('wapDelReport').checked;
+
+            if (!/^\d{6,15}$/.test(target)) {
+                logOutput("Target phone number WAP Push harus berupa 6-15 digit angka.", true);
+                return;
+            }
+
+            logOutput(`Building WAP Push PDU for ${target} via ${port}...`);
+            try {
+                const data = await postJson('/api/send-wap', {
+                    port, start_date, end_date, header, target, msg, wap_type, del_report
+                });
+                if (data.pdu) {
+                    logOutput(`Generated WAP PDU (len=${data.pdu_len ?? '-'}):\n${data.pdu}`);
+                }
+                if (Array.isArray(data.trace) && data.trace.length > 0) {
+                    logOutput(`Serial Trace:\n- ${data.trace.join('\n- ')}`);
+                }
+                logOutput(`Modem Response:\n${(data.response || '').trim()}`);
+                setModemStatus('ok');
+            } catch (err) {
+                setModemStatus('error');
+                if (err.data?.pdu) logOutput(`Generated WAP PDU:\n${err.data.pdu}`);
+                if (Array.isArray(err.data?.trace)) logOutput(`Serial Trace:\n- ${err.data.trace.join('\n- ')}`);
+                logOutput("WAP Push transmission failed: " + err.message, true);
+            }
+        }
+    </script>
+</body>
+</html>
